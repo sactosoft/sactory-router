@@ -1,0 +1,21 @@
+{
+	"name": "sactory-plus",
+	"version": "0.1.0",
+	"description": "Extension libraries for Sactory",
+	"scripts": {
+		"dist": "node ./dist.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/sactory/sactory-plus.git"
+	},
+	"author": "Mark White",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/sactory/sactory-plus/issues"
+	},
+	"homepage": "https://github.com/sactory/sactory-plus#readme",
+	"devDependencies": {
+		"sactory": "^0.110.0"
+	}
+}
