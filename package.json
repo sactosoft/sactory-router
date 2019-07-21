@@ -16,6 +16,6 @@
 	},
 	"homepage": "https://github.com/sactory/sactory-plus#readme",
 	"devDependencies": {
-		"sactory": "^0.110.0"
+		"sactory": "^0.111.0"
 	}
 }

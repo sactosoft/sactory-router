@@ -55,6 +55,8 @@ Language.prototype.get = function(key, args, lang){
 
 	if(!@) @ = <:fragment />;
 
+	if(typeof attrs == "string") attrs = {text: attrs};
+
 	var args = attrs.args;
 	delete attrs.args;
 

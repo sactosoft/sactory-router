@@ -129,7 +129,7 @@ Router.prototype.reload = function(){
 						var key, value = "";
 						if(eq > 0) {
 							key = pair.substring(0, eq);
-							value = decodeURIComponent(pair.substr(eq + 1));
+							value = decodeURIComponent(pair.substr(eq + 1).replace(/\+/g, " "));
 						} else {
 							key = pair;
 						}
