@@ -51,7 +51,7 @@ Language.prototype.get = function(key, args, lang){
 	}
 };
 
-@widgets.add("lang", function@(attrs){
+Sactory.addWidget("lang", function@(attrs){
 
 	if(!@) @ = <:fragment />;
 

@@ -1,16 +1,21 @@
 var Sactory = require("sactory");
 
-function Router(path, anchor) {
+function Router(path, anchor, options) {
 
 	// transform to absolute path
 	this.path = <a href=path />.href;
 	this.bind = Sactory.bindFactory.fork();
 	this.anchor = anchor;
+	this.options = options || {};
 	this.routes = [];
+
+	if(this.path.charAt(this.path.length - 1) != "/") this.path += "/";
+	if(!this.options.routes) this.options.routes = "";
+	else if(this.options.routes.charAt(this.options.routes.length - 1) != "/") this.options.routes += "/";
 
 	var router = this;
 
-	@widgets.add("a", function@(){
+	Sactory.addWidget("a", function@(){
 		return <["a"] +click={ router.handleAnchor(event, this) } />
 	});
 
@@ -56,7 +61,8 @@ Router.prototype.routeImpl = function(path, handler){
 		}
 	});
 	if(typeof handler != "function") {
-		var lib = typeof handler == "string" ? handler : (function(){
+		var router = this;
+		var lib = this.options.routes + (typeof handler == "string" ? handler : (function(){
 			var ret = [];
 			for(var i=0; i<route.parts.length; i++) {
 				var part = route.parts[i];
@@ -64,12 +70,14 @@ Router.prototype.routeImpl = function(path, handler){
 				else ret.push(part.path);
 			}
 			return ret.join("/");
-		})();
+		})());
 		route.handler = function(_, element, bind, anchor, params){
 			require([lib], function(handler){
 				handler(_, element, bind, anchor, params);
+				if(router.after) router.after();
 			});
 		};
+		route.async = true;
 	} else {
 		route.handler = handler;
 	}
@@ -105,6 +113,7 @@ Router.prototype.go = function(path){
 
 Router.prototype.reload = function(){
 	this.bind.rollback(); // undo changes
+	if(this.before) this.before();
 	var path = (window.location.protocol + "//" + window.location.host + window.location.pathname).substr(this.path.length).split("/");
 	for(var i=0; i<this.routes.length; i++) {
 		var route = this.routes[i];
@@ -143,12 +152,14 @@ Router.prototype.reload = function(){
 					});
 				}
 				this.handle(route.handler, params);
+				if(!route.async && this.after) this.after();
 				return;
 			}
 		}
 	}
 	if(this.routes.notFound) {
 		this.handle(this.routes.notFound);
+		if(this.after) this.after();
 	}
 };
 

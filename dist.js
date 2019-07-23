@@ -29,7 +29,7 @@ fs.readdir("./src/", (error, items) => {
 				source = source.replace(/\/\/export ([A-Za-z0-9_]+)/gm, "exports.$1 = $1;");
 				source = "var exports = {};" + source + "return exports;";
 				var define = new Transpiler({filename, env: "define"}).transpile(source);
-				fs.writeFile("./dist/" + filename.slice(0, -3) + "require.js", define.source.all, nop);
+				fs.writeFile("./dist/" + filename.slice(0, -3) + "amd.js", define.source.all, nop);
 			}(source);
 
 		});
