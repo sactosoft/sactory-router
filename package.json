@@ -1,6 +1,6 @@
 {
 	"name": "sactory-plus",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Extension libraries for Sactory",
 	"scripts": {
 		"dist": "node ./dist.js"

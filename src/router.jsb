@@ -29,9 +29,26 @@ function Router(path, anchor, options) {
 
 }
 
+Object.defineProperty(Router.prototype, "location", {
+	get: function(){
+		return window.location.protocol + "//" + window.location.host + window.location.pathname;
+	}
+});
+
+Router.prototype.isInPath = function(href){
+	return href.length >= this.path.length && href.substring(0, this.path.length) == this.path;
+};
+
+Router.prototype.shouldReload = function(href){
+	function removeHash(path) {
+		var hash = path.indexOf("#");
+		return hash == -1 ? path : path.substring(0, hash);
+	}
+	return removeHash(href) != removeHash(this.location);
+};
+
 Router.prototype.handleAnchor = function(event, anchor){
-	if(!anchor.target || anchor.target == "_self") {
-		//TODO check path matching
+	if((!anchor.target || anchor.target == "_self") && this.isInPath(anchor.href) && this.shouldReload(anchor.href)) {
 		event.preventDefault();
 		this.go(anchor.href);
 	}
@@ -73,7 +90,13 @@ Router.prototype.routeImpl = function(path, handler){
 		})());
 		route.handler = function(_, element, bind, anchor, params){
 			require([lib], function(handler){
-				handler(_, element, bind, anchor, params);
+				if(handler["default"]) handler = handler["default"];
+				if(handler.prototype && handler.prototype.render) {
+					var instance = new handler(params, router);
+					instance.render(_, element, bind, anchor);
+				} else {
+					handler(_, element, bind, anchor, params, router);
+				}
 				if(router.after) router.after();
 			});
 		};
@@ -114,7 +137,7 @@ Router.prototype.go = function(path){
 Router.prototype.reload = function(){
 	this.bind.rollback(); // undo changes
 	if(this.before) this.before();
-	var path = (window.location.protocol + "//" + window.location.host + window.location.pathname).substr(this.path.length).split("/");
+	var path = this.location.substr(this.path.length).split("/");
 	for(var i=0; i<this.routes.length; i++) {
 		var route = this.routes[i];
 		if(route.parts.length == path.length) {
