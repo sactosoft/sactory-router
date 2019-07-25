@@ -51,9 +51,9 @@ Language.prototype.get = function(key, args, lang){
 	}
 };
 
-Sactory.addWidget("lang", function@(attrs){
+Sactory.addWidget("lang", function(@, attrs){
 
-	if(!@) @ = <:fragment />;
+	if(!@@) @@ = <:fragment />;
 
 	if(typeof attrs == "string") attrs = {text: attrs};
 
@@ -81,7 +81,7 @@ Sactory.addWidget("lang", function@(attrs){
 
 	});
 
-	return @;
+	return @@;
 
 });
 
