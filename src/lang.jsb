@@ -1,5 +1,3 @@
-var Sactory = require("sactory");
-
 var instance;
 
 function Language(dict, version) {
@@ -85,4 +83,4 @@ Sactory.addWidget("lang", function(@, attrs){
 
 });
 
-//export Language
+exports.Language = Language;

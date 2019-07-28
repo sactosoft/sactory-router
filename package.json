@@ -1,6 +1,6 @@
 {
 	"name": "sactory-plus",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Extension libraries for Sactory",
 	"scripts": {
 		"dist": "node ./dist.js"
@@ -16,6 +16,7 @@
 	},
 	"homepage": "https://github.com/sactory/sactory-plus#readme",
 	"devDependencies": {
-		"sactory": "^0.114.0"
+		"sactory": "^0.114.0",
+		"uglify-js": "^3.6.0"
 	}
 }

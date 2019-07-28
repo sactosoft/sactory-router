@@ -1,5 +1,3 @@
-var Sactory = require("sactory");
-
 function Router(path, anchor, options) {
 
 	// transform to absolute path
@@ -195,4 +193,4 @@ Router.prototype.reload = function(){
 	}
 };
 
-//export Router
+exports.Router = Router;
