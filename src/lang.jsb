@@ -62,8 +62,8 @@ Sactory.addWidget("lang", function(@, attrs){
 
 		var deps = [instance.locale];
 		if(args) {
-			for(var name in args) {
-				var arg = args[name];
+			for(var n in args) {
+				var arg = args[n];
 				if(Sactory.isObservable(arg)) {
 					deps.push(arg);
 				}
