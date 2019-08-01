@@ -3,14 +3,14 @@ function removeHash(path) {
 	return hash == -1 ? path : path.substring(0, hash);
 }
 
-function PathData(router, params, query, data) {
+function PathData(router, params, query, state) {
 	for(var key in params) {
 		this[key] = params[key];
 	}
 	this.router = router;
 	this.params = params;
 	this.query = query;
-	this.data = data;
+	this.state = state;
 }
 
 PathData.prototype.param = function(key){
@@ -147,16 +147,16 @@ Router.prototype.notFound = function(handler){
 	this.routes.notFound = handler;
 };
 
-Router.prototype.replace = function(path, data){
-	window.history.replaceState(data || {}, "", path);
+Router.prototype.replace = function(path, state){
+	window.history.replaceState(state || {}, "", path);
 };
 
-Router.prototype.go = function(path, data){
-	window.history.pushState(data || {}, "", path);
-	this.reload(data);
+Router.prototype.go = function(path, state){
+	window.history.pushState(state || {}, "", path);
+	this.reload(state);
 };
 
-Router.prototype.reload = function(data){
+Router.prototype.reload = function(state){
 	this.bind.rollback(); // undo changes
 	if(this.before) this.before();
 	var path = (window.location.protocol + "//" + window.location.host + window.location.pathname).substr(this.path.length).split("/");
@@ -196,7 +196,7 @@ Router.prototype.reload = function(data){
 						}
 					});
 				}
-				this.handle(route.handler, new PathData(this, params, query, data || {}));
+				this.handle(route.handler, new PathData(this, params, query, state || {}));
 				if(!route.async && this.after) this.after();
 				return;
 			}
