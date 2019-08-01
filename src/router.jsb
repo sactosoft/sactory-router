@@ -1,3 +1,22 @@
+function removeHash(path) {
+	var hash = path.indexOf("#");
+	return hash == -1 ? path : path.substring(0, hash);
+}
+
+function PathData(router, params, query, data) {
+	for(var key in params) {
+		this[key] = params[key];
+	}
+	this.router = router;
+	this.params = params;
+	this.query = query;
+	this.data = data;
+}
+
+PathData.prototype.param = function(key){
+	return this.params[key];
+};
+
 function Router(path, anchor, options) {
 
 	// transform to absolute path
@@ -21,39 +40,32 @@ function Router(path, anchor, options) {
 	<"a"+ :query-body +click:this=this.handleAnchor />
 
 	// handle popstate event
-	window.onpopstate = function(){
-		router.reload();
+	window.onpopstate = function(event){
+		router.reload(event.state);
 	};
 
 }
-
-Object.defineProperty(Router.prototype, "location", {
-	get: function(){
-		return window.location.protocol + "//" + window.location.host + window.location.pathname;
-	}
-});
 
 Router.prototype.isInPath = function(href){
 	return href.length >= this.path.length && href.substring(0, this.path.length) == this.path;
 };
 
-Router.prototype.shouldReload = function(href){
-	function removeHash(path) {
-		var hash = path.indexOf("#");
-		return hash == -1 ? path : path.substring(0, hash);
-	}
-	return removeHash(href) != removeHash(this.location);
-};
-
 Router.prototype.handleAnchor = function(event, anchor){
-	if((!anchor.target || anchor.target == "_self") && this.isInPath(anchor.href) && this.shouldReload(anchor.href)) {
+	if((!anchor.target || anchor.target == "_self") && this.isInPath(anchor.href)) {
+		// the router should handle the link
 		event.preventDefault();
-		this.go(anchor.href);
+		if(removeHash(anchor.href) != removeHash(window.location.href)) {
+			// the url, and not just the hash, has changed and the page should be reloaded
+			this.go(anchor.href);
+		} else if(anchor.href != window.location.href) {
+			// just update the history
+			window.history.pushState({}, "", anchor.href);
+		}
 	}
 };
 
-Router.prototype.handle = function(handler, params){
-	handler.call(this.anchor.parentNode, {bind: this.bind, anchor: this.anchor}, params);
+Router.prototype.handle = function(handler, pdata){
+	handler.call(this.anchor.parentNode, {bind: this.bind, anchor: this.anchor}, pdata);
 };
 
 Router.prototype.route = function(path, handler){
@@ -86,26 +98,25 @@ Router.prototype.routeImpl = function(path, handler){
 			}
 			return ret.join("/");
 		})());
-		route.handler = function(context, params){
+		route.handler = function(context, pdata){
 			var element = this;
 			require([lib], function(handler){
 				if(handler["default"]) handler = handler["default"];
 				if(handler.prototype && handler.prototype.render) {
-					var instance = new handler(params, router);
+					var instance = new handler(pdata);
 					context.element = element;
 					instance.render(context);
 				} else {
-					handler.call(element, context, params, router);
+					handler.call(element, context, pdata);
 				}
 				if(router.after) router.after();
 			});
 		};
 		route.async = true;
 	} else if(handler.prototype && handler.prototype.render) {
-		var router = this;
-		route.handler = function(context, params){
+		route.handler = function(context, pdata){
 			context.element = this;
-			var instance = new handler(params, router);
+			var instance = new handler(pdata);
 			instance.render(context);
 		};
 	} else {
@@ -128,7 +139,7 @@ Router.prototype.redirect = function(from, to){
 };
 
 Router.prototype.redirectImpl = function(path){
-	window.history.replaceState("", {}, path + (path.indexOf("?") == -1 ? window.location.search : (window.location.search && "&" + window.location.search.substr(1))) + window.location.hash);
+	window.history.replaceState({}, "", path + (path.indexOf("?") == -1 ? window.location.search : (window.location.search && "&" + window.location.search.substr(1))) + window.location.hash);
 	router.reload();
 };
 
@@ -136,32 +147,36 @@ Router.prototype.notFound = function(handler){
 	this.routes.notFound = handler;
 };
 
-Router.prototype.go = function(path){
-	window.history.pushState("", {}, path);
-	this.reload();
+Router.prototype.replace = function(path, data){
+	window.history.replaceState(data || {}, "", path);
 };
 
-Router.prototype.reload = function(){
+Router.prototype.go = function(path, data){
+	window.history.pushState(data || {}, "", path);
+	this.reload(data);
+};
+
+Router.prototype.reload = function(data){
 	this.bind.rollback(); // undo changes
 	if(this.before) this.before();
-	var path = this.location.substr(this.path.length).split("/");
+	var path = (window.location.protocol + "//" + window.location.host + window.location.pathname).substr(this.path.length).split("/");
 	for(var i=0; i<this.routes.length; i++) {
 		var route = this.routes[i];
 		if(route.parts.length == path.length) {
 			var match = true;
-			var params = [];
+			var params = {};
 			for(var j=0; j<path.length; j++) {
 				var part = route.parts[j];
 				var value = path[j];
 				if(part.variable) {
-					params.push(params[part.name] = decodeURIComponent(value));
+					params[part.name] = decodeURIComponent(value);
 				} else if(part.path != value) {
 					match = false;
 					break;
 				}
 			}
 			if(match) {
-				params.query = {};
+				var query = {};
 				if(window.location.search) {
 					window.location.search.substr(1).split("&").forEach(function(pair){
 						var eq = pair.indexOf("=");
@@ -173,15 +188,15 @@ Router.prototype.reload = function(){
 							key = pair;
 						}
 						key = decodeURIComponent(key);
-						if(params.query.hasOwnProperty(key)) {
+						if(query.hasOwnProperty(key)) {
 							// concat with other values
-							params.query[key] = [].concat(params.query[key], value);
+							query[key] = [].concat(query[key], value);
 						} else {
-							params.query[key] = value;
+							query[key] = value;
 						}
 					});
 				}
-				this.handle(route.handler, params);
+				this.handle(route.handler, new PathData(this, params, query, data || {}));
 				if(!route.async && this.after) this.after();
 				return;
 			}
