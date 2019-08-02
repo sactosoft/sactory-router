@@ -208,4 +208,7 @@ Router.prototype.reload = function(state){
 	}
 };
 
-exports.Router = Router;
+var ret = {};
+ret["default"] = Router;
+ret.Router = Router;
+return ret;

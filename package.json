@@ -1,7 +1,7 @@
 {
-	"name": "sactory-plus",
+	"name": "@sactory/router",
 	"version": "0.6.0",
-	"description": "Extension libraries for Sactory",
+	"description": "Single page application routing for Sactory",
 	"scripts": {
 		"dist": "node ./dist.js"
 	},
@@ -16,7 +16,7 @@
 	},
 	"homepage": "https://github.com/sactory/sactory-plus#readme",
 	"devDependencies": {
-		"sactory": "^0.114.2",
+		"sactory": "^0.116.0",
 		"uglify-js": "^3.6.0"
 	}
 }

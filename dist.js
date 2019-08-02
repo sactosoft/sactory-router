@@ -19,17 +19,20 @@ fs.readdir("./src/", (error, items) => {
 	items.forEach(filename => {
 		fs.readFile("./src/" + filename, "utf8", (error, source) => {
 
-			var result = new Transpiler({filename, env: "define"}).transpile(source);
-			var output = "!function(a){\n" +
-				"	if(typeof define == \"function\" && define.amd) {\n" +
-				"		define([\"sactory\", \"exports\"], a);\n" +
-				"	} else {\n" +
-				"		a(Sactory, window);\n" +
-				"	}\n" +
-				"}(function(Sactory, exports){\n\n" +
-				"var " + result.variables.runtime + " = Sactory;\n" +
-				"var " + result.variables.context + " = {};\n\n" + result.source.contentOnly + "\n});\n";
-			fs.writeFile("./dist/" + filename.slice(0, -1), output, nop);
+			var options = {
+				filename,
+				env: ["amd", "commonjs", "none"],
+				globalExport: "Sactory." + filename.slice(0, -4),
+				dependencies: {
+					Sactory: {
+						none: "Sactory",
+						amd: "sactory",
+						commonjs: "sactory"
+					}
+				}
+			};
+			var output = new Transpiler(options).transpile(source).source.all;
+			fs.writeFile("./dist/sactory-" + filename.slice(0, -1), output, nop);
 
 			var minname = filename.slice(0, -3) + "min.js";
 			var mapname = minname + ".map";
@@ -39,8 +42,8 @@ fs.readdir("./src/", (error, items) => {
 					url: mapname
 				}
 			});
-			fs.writeFile("./dist/" + minname, minified.code, nop);
-			fs.writeFile("./dist/" + mapname, minified.map, nop);
+			fs.writeFile("./dist/sactory-" + minname, minified.code, nop);
+			fs.writeFile("./dist/sactory-" + mapname, minified.map, nop);
 
 		});
 	});
