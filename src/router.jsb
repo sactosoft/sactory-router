@@ -1,8 +1,3 @@
-function removeHash(path) {
-	var hash = path.indexOf("#");
-	return hash == -1 ? path : path.substring(0, hash);
-}
-
 function PathData(router, params, query, state) {
 	for(var key in params) {
 		this[key] = params[key];
@@ -33,7 +28,7 @@ function Router(path, anchor, options) {
 	var router = this;
 
 	Sactory.addWidget("a", function(@){
-		return <["a"] +click={ router.handleAnchor(event, this) } />
+		return <a !:widget +click={ router.handleAnchor(event, this) } />
 	});
 
 	// also handle the links created before or without sactory
@@ -50,17 +45,25 @@ Router.prototype.isInPath = function(href){
 	return href.length >= this.path.length && href.substring(0, this.path.length) == this.path;
 };
 
+Router.prototype.isChanged = function(from, to){
+	function parse(path) {
+		var i = path.indexOf("#");
+		if(i == -1) {
+			return {path: path, hash: false};
+		} else {
+			return {path: path.substring(0, i), hash: true};
+		}
+	}
+	from = parse(from);
+	to = parse(to);
+	return from.path != to.path || from.hash && !to.hash;
+};
+
 Router.prototype.handleAnchor = function(event, anchor){
-	if((!anchor.target || anchor.target == "_self") && this.isInPath(anchor.href)) {
+	if((!anchor.target || anchor.target == "_self") && this.isInPath(anchor.href) && this.isChanged(window.location.href, anchor.href)) {
 		// the router should handle the link
 		event.preventDefault();
-		if(removeHash(anchor.href) != removeHash(window.location.href)) {
-			// the url, and not just the hash, has changed and the page should be reloaded
-			this.go(anchor.href);
-		} else if(anchor.href != window.location.href) {
-			// just update the history
-			window.history.pushState({}, "", anchor.href);
-		}
+		this.go(anchor.href);
 	}
 };
 

@@ -1,22 +1,22 @@
 {
 	"name": "@sactory/router",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Single page application routing for Sactory",
 	"scripts": {
 		"dist": "node ./dist.js"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/sactory/sactory-plus.git"
+		"url": "git+https://github.com/sactory/sactory-router.git"
 	},
 	"author": "Mark White",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/sactory/sactory-plus/issues"
+		"url": "https://github.com/sactory/sactory-router/issues"
 	},
-	"homepage": "https://github.com/sactory/sactory-plus#readme",
+	"homepage": "https://github.com/sactory/sactory-router#readme",
 	"devDependencies": {
-		"sactory": "^0.116.0",
+		"sactory": "^0.120.1",
 		"uglify-js": "^3.6.0"
 	}
 }

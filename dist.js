@@ -21,6 +21,7 @@ fs.readdir("./src/", (error, items) => {
 
 			var options = {
 				filename,
+				versionCheck: false,
 				env: ["amd", "commonjs", "none"],
 				globalExport: "Sactory." + filename.slice(0, -4),
 				dependencies: {
