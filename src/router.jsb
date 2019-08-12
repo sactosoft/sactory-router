@@ -12,6 +12,10 @@ PathData.prototype.param = function(key){
 	return this.params[key];
 };
 
+function decodeQuery(value) {
+	return decodeURIComponent(value.replace(/\+/g, " "));
+}
+
 function Router(path, anchor, options) {
 
 	// transform to absolute path
@@ -72,7 +76,7 @@ Router.prototype.handle = function(handler, pdata){
 };
 
 Router.prototype.route = function(path, handler){
-	if(path instanceof Array) {
+	if(Array.isArray(path)) {
 		for(var i=0; i<path.length; i++) {
 			this.routeImpl(path[i], handler);
 		}
@@ -83,8 +87,33 @@ Router.prototype.route = function(path, handler){
 
 Router.prototype.routeImpl = function(path, handler){
 	var route = {parts: []};
-	path.split("/").forEach(function(part){
-		if(part.charAt(0) == ":") {
+	var query = path.indexOf("?");
+	if(query != -1) {
+		route.query = {};
+		path.substr(query + 1).split("&").forEach(function(name){
+			var info = {};
+			if(name.charAt(0) == "[" && name.charAt(name.length - 1) == "]") {
+				info.array = true;
+				name = name.slice(1, -1);
+			} else {
+				var eq = name.indexOf("=");
+				if(eq != -1) {
+					info.value = decodeQuery(name.substr(eq + 1));
+					name = name.substring(0, eq);
+				}
+			}
+			route.query[decodeURIComponent(name)] = info;
+		});
+		path = path.substring(0, query);
+	}
+	path.split("/").forEach(function(part, i){
+		if(part == "*") {
+			route.parts.push({variable: true});
+		} else if(part == "**") {
+			route.parts.push({all: true});
+			route.all = true;
+			route.allIndex = i;
+		} else if(part.charAt(0) == ":") {
 			route.parts.push({variable: true, name: part.substr(1)});
 		} else {
 			route.parts.push({path: part});
@@ -131,8 +160,8 @@ Router.prototype.routeImpl = function(path, handler){
 Router.prototype.redirect = function(from, to){
 	var router = this;
 	if(typeof to == "function") {
-		this.route(from, function(_, element, bind, anchor, params){
-			router.redirectImpl(to(params));
+		this.route(from, function(context, pdata){
+			router.redirectImpl(to(pdata));
 		});
 	} else {
 		this.route(from, function(){
@@ -165,14 +194,18 @@ Router.prototype.reload = function(state){
 	var path = (window.location.protocol + "//" + window.location.host + window.location.pathname).substr(this.path.length).split("/");
 	for(var i=0; i<this.routes.length; i++) {
 		var route = this.routes[i];
-		if(route.parts.length == path.length) {
+		if(route.parts.length == path.length || (route.all && route.allIndex < path.length)) {
 			var match = true;
 			var params = {};
 			for(var j=0; j<path.length; j++) {
 				var part = route.parts[j];
 				var value = path[j];
-				if(part.variable) {
-					params[part.name] = decodeURIComponent(value);
+				if(part.all) {
+					break;
+				} else if(part.variable) {
+					if(part.name) {
+						params[part.name] = decodeURIComponent(value);
+					}
 				} else if(part.path != value) {
 					match = false;
 					break;
@@ -186,12 +219,12 @@ Router.prototype.reload = function(state){
 						var key, value = "";
 						if(eq > 0) {
 							key = pair.substring(0, eq);
-							value = decodeURIComponent(pair.substr(eq + 1).replace(/\+/g, " "));
+							value = decodeQuery(pair.substr(eq + 1));
 						} else {
 							key = pair;
 						}
 						key = decodeURIComponent(key);
-						if(query.hasOwnProperty(key)) {
+						if(Object.prototype.hasOwnProperty.call(query, key)) {
 							// concat with other values
 							query[key] = [].concat(query[key], value);
 						} else {
@@ -199,9 +232,28 @@ Router.prototype.reload = function(state){
 						}
 					});
 				}
-				this.handle(route.handler, new PathData(this, params, query, state || {}));
-				if(!route.async && this.after) this.after();
-				return;
+				if(route.query) {
+					for(var name in route.query) {
+						var info = route.query[name];
+						if(!Object.prototype.hasOwnProperty.call(query, name)) {
+							if(info.value) {
+								query[name] = info.value;
+							} else if(info.array) {
+								query[name] = [];
+							} else {
+								match = false;
+								break;
+							}
+						} else if(info.array && !(query[name] instanceof Array)) {
+							query[name] = [query[name]];
+						}
+					}
+				}
+				if(match) {
+					this.handle(route.handler, new PathData(this, params, query, state || {}));
+					if(!route.async && this.after) this.after();
+					return;
+				}
 			}
 		}
 	}
