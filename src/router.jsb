@@ -31,17 +31,13 @@ function Router(path, anchor, options) {
 
 	var router = this;
 
-	Sactory.addWidget("a", function(@){
-		return <a !:widget +click={ router.handleAnchor(event, this) } />
-	});
+	Sactory.addWidget("a", @ => <a !:widget +click={ router.handleAnchor(event, this) } />);
 
 	// also handle the links created before or without sactory
-	<"a"+ :query-body +click:this=this.handleAnchor />
+	<:query-all ("a") +click:this=this.handleAnchor />
 
 	// handle popstate event
-	window.onpopstate = function(event){
-		router.reload(event.state);
-	};
+	window.onpopstate = event => router.reload(event.state);
 
 }
 
@@ -131,15 +127,14 @@ Router.prototype.routeImpl = function(path, handler){
 			return ret.join("/");
 		})());
 		route.handler = function(context, pdata){
-			var element = this;
-			require([lib], function(handler){
+			require([lib], handler => {
 				if(handler["default"]) handler = handler["default"];
 				if(handler.prototype && handler.prototype.render) {
 					var instance = new handler(pdata);
-					context.element = element;
+					context.element = this;
 					instance.render(context);
 				} else {
-					handler.call(element, context, pdata);
+					handler.call(this, context, pdata);
 				}
 				if(router.after) router.after();
 			});
@@ -158,15 +153,10 @@ Router.prototype.routeImpl = function(path, handler){
 };
 
 Router.prototype.redirect = function(from, to){
-	var router = this;
 	if(typeof to == "function") {
-		this.route(from, function(context, pdata){
-			router.redirectImpl(to(pdata));
-		});
+		this.route(from, (context, pdata) => this.redirectImpl(to(pdata)));
 	} else {
-		this.route(from, function(){
-			router.redirectImpl(to);
-		});
+		this.route(from, () => this.redirectImpl(to));
 	}
 };
 
@@ -263,7 +253,4 @@ Router.prototype.reload = function(state){
 	}
 };
 
-var ret = {};
-ret["default"] = Router;
-ret.Router = Router;
-return ret;
+return { default: Router, Router };
