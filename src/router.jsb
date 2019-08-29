@@ -20,6 +20,7 @@ function Router(path, anchor, options) {
 
 	// transform to absolute path
 	this.path = <a href=path />.href;
+	this.context = Sactory.init();
 	this.bind = Sactory.bindFactory.fork();
 	this.anchor = anchor;
 	this.options = options || {};
@@ -29,15 +30,13 @@ function Router(path, anchor, options) {
 	if(!this.options.routes) this.options.routes = "";
 	else if(this.options.routes.charAt(this.options.routes.length - 1) != "/") this.options.routes += "/";
 
-	var router = this;
-
-	Sactory.addWidget("a", @ => <a !:widget +click={ router.handleAnchor(event, this) } />);
+	Sactory.addWidget("a", () => <a !:widget +click={this.handleAnchor(event, target)} />);
 
 	// also handle the links created before or without sactory
-	<:query-all ("a") +click:this=this.handleAnchor />
+	<:query-all ("a") +click={this.handleAnchor(event, target)} />
 
 	// handle popstate event
-	window.onpopstate = event => router.reload(event.state);
+	window.onpopstate = event => this.reload(event.state);
 
 }
 
@@ -49,7 +48,7 @@ Router.prototype.isChanged = function(from, to){
 	function parse(path) {
 		var i = path.indexOf("#");
 		if(i == -1) {
-			return {path: path, hash: false};
+			return {path, hash: false};
 		} else {
 			return {path: path.substring(0, i), hash: true};
 		}
@@ -68,7 +67,7 @@ Router.prototype.handleAnchor = function(event, anchor){
 };
 
 Router.prototype.handle = function(handler, pdata){
-	handler.call(this.anchor.parentNode, {bind: this.bind, anchor: this.anchor}, pdata);
+	handler.call(this.anchor.parentNode, pdata, Sactory.newContext(this.context, {bind: this.bind, anchor: this.anchor}));
 };
 
 Router.prototype.route = function(path, handler){
@@ -117,7 +116,7 @@ Router.prototype.routeImpl = function(path, handler){
 	});
 	if(typeof handler != "function") {
 		var router = this;
-		var lib = this.options.routes + (typeof handler == "string" ? handler : (function(){
+		var lib = this.options.routes + (typeof handler == "string" ? handler : (() => {
 			var ret = [];
 			for(var i=0; i<route.parts.length; i++) {
 				var part = route.parts[i];
@@ -126,25 +125,25 @@ Router.prototype.routeImpl = function(path, handler){
 			}
 			return ret.join("/");
 		})());
-		route.handler = function(context, pdata){
+		route.handler = function(pdata, context){
 			require([lib], handler => {
 				if(handler["default"]) handler = handler["default"];
 				if(handler.prototype && handler.prototype.render) {
-					var instance = new handler(pdata);
+					var instance = Sactory.Widget.newInstance(handler, context, pdata);
 					context.element = this;
-					instance.render(context);
+					Sactory.Widget.render(handler, instance, pdata, context);
 				} else {
-					handler.call(this, context, pdata);
+					handler.call(this, pdata, context);
 				}
 				if(router.after) router.after();
 			});
 		};
 		route.async = true;
 	} else if(handler.prototype && handler.prototype.render) {
-		route.handler = function(context, pdata){
+		route.handler = function(pdata, context){
+			var instance = Sactory.Widget.newInstance(handler, context, pdata);
 			context.element = this;
-			var instance = new handler(pdata);
-			instance.render(context);
+			Sactory.Widget.render(handler, instance, pdata, context);
 		};
 	} else {
 		route.handler = handler;
