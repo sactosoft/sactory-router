@@ -20,7 +20,7 @@ function Router(path, anchor, options) {
 
 	// transform to absolute path
 	this.path = <a href=path />.href;
-	this.context = Sactory.init();
+	this.context = Sactory.init(0);
 	this.bind = Sactory.bindFactory.fork();
 	this.anchor = anchor;
 	this.options = options || {};
