@@ -130,9 +130,8 @@ Router.prototype.routeImpl = function(path, handler){
 			require([lib], handler => {
 				if(handler["default"]) handler = handler["default"];
 				if(handler.prototype && handler.prototype.render) {
-					var instance = Sactory.Widget.newInstance(handler, context, pdata);
-					context.element = this;
-					Sactory.Widget.render(handler, instance, pdata, context);
+					$$context = context;
+					<[handler] :this $=pdata />
 				} else {
 					handler.call(this, pdata, context);
 				}
@@ -142,9 +141,8 @@ Router.prototype.routeImpl = function(path, handler){
 		route.async = true;
 	} else if(handler.prototype && handler.prototype.render) {
 		route.handler = function(pdata, context){
-			var instance = Sactory.Widget.newInstance(handler, context, pdata);
-			context.element = this;
-			Sactory.Widget.render(handler, instance, pdata, context);
+			$$context = context;
+			<[handler] :this $=pdata />
 		};
 	} else {
 		route.handler = handler;
