@@ -20,7 +20,7 @@ function Router(path, anchor, options) {
 
 	// transform to absolute path
 	this.path = <a href=path />.href;
-	this.bind = Sactory.bindFactory.fork();
+	this.bind = Sactory.bindFactory.fork("router");
 	this.anchor = anchor;
 	this.options = options || {};
 	this.routes = [];
@@ -29,12 +29,12 @@ function Router(path, anchor, options) {
 	if(!this.options.routes) this.options.routes = "";
 	else if(this.options.routes.charAt(this.options.routes.length - 1) != "/") this.options.routes += "/";
 
-	Sactory.addWidget("a", () => {
-		return <a !:widget +click={this.handleAnchor(event, target)} />
-	});
+	Sactory.addWidget("a", function(){
+		return <a !:widget +click={{this.handleAnchor(event, target)}} />
+	}.bind(this));
 
 	// also handle the links created before or without sactory
-	<:query-all ("a") +click={this.handleAnchor(event, target)} />
+	<:query-all ("a") +click={{this.handleAnchor(event, target)}} />
 
 	// handle popstate event
 	window.onpopstate = event => this.reload(event.state);
@@ -68,7 +68,7 @@ Router.prototype.handleAnchor = function(event, anchor){
 };
 
 Router.prototype.handle = function(handler, pdata){
-	handler.call(this.anchor.parentNode, pdata, Sactory.newContext({}, {bind: this.bind, anchor: this.anchor}));
+	handler.call(this.anchor.parentNode, pdata, Sactory.newContext({}, {top: true, bind: this.bind, anchor: this.anchor}));
 };
 
 Router.prototype.route = function(path, handler){
