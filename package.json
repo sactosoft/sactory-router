@@ -1,6 +1,6 @@
 {
 	"name": "@sactory/router",
-	"version": "0.14.0",
+	"version": "0.15.0",
 	"description": "Single page application routing for Sactory",
 	"scripts": {
 		"dist": "gulp dist"
@@ -16,7 +16,7 @@
 	},
 	"homepage": "https://github.com/sactory/sactory-router#readme",
 	"devDependencies": {
-		"@sactory/dev": "^0.6.2",
+		"@sactory/dev": "^0.7.1",
 		"gulp": "^4.0.2"
 	}
 }
